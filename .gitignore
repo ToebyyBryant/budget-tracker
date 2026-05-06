@@ -42,3 +42,16 @@ coverage/
 
 # Misc
 *.pem
+
+# AI Agent / Tool config
+.claude/
+.kiro/
+
+# SQLite database files
+server/data/
+*.sqlite
+
+# Old/unrelated project files
+BudgetTracker/
+BudgetTracker_Requirements.docx
+Week1 Update.txt
