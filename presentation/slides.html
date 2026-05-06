@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Tracker — Advanced Technologies Presentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/night.min.css">
+  <style>
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+    .reveal pre { font-size: 0.55em; }
+    .reveal .small { font-size: 0.7em; }
+    .reveal .tech-badge {
+      display: inline-block;
+      background: #334155;
+      border-radius: 6px;
+      padding: 4px 12px;
+      margin: 4px;
+      font-size: 0.7em;
+    }
+    .reveal table { margin: 0 auto; font-size: 0.65em; }
+    .reveal table th { background: #1e293b; }
+    .reveal table td, .reveal table th { padding: 8px 16px; border: 1px solid #475569; }
+    .reveal .diagram-box {
+      background: #1e293b;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin: 8px;
+      display: inline-block;
+    }
+    .reveal .arrow { color: #3b82f6; font-size: 1.5em; }
+    .reveal .highlight { color: #60a5fa; }
+    .reveal .green { color: #4ade80; }
+    .reveal .red { color: #f87171; }
+    .reveal ul { text-align: left; }
+    .slide-number { font-size: 0.8em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- SLIDE 1: Title -->
+<section>
+  <h1>💰 Budget Tracker</h1>
+  <h3>Full-Stack CRUD Application</h3>
+  <p class="small" style="margin-top: 2em;">Advanced Technologies — Spring 2026</p>
+  <p class="small">Node.js • React • SQLite • JWT Auth • Chart.js</p>
+</section>
+
+<!-- SLIDE 2: Problem & Solution -->
+<section>
+  <h2>The Problem</h2>
+  <ul>
+    <li>People struggle to track where their money goes</li>
+    <li>Spreadsheets are tedious and lack visualization</li>
+    <li>Need a secure, personal finance tool</li>
+  </ul>
+  <br><br>
+  <h3 class="highlight">The Solution</h3>
+  <p>A full-stack web app with CRUD operations, categories, charts, and user authentication</p>
+</section>
+
+<!-- SLIDE 3: Tech Stack -->
+<section>
+  <h2>Tech Stack</h2>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Why</th></tr>
+    <tr><td>Backend</td><td>Node.js + Express</td><td>Fast, lightweight, huge ecosystem</td></tr>
+    <tr><td>Database</td><td>SQLite + Sequelize ORM</td><td>Zero-config, portable, relational</td></tr>
+    <tr><td>Auth</td><td>JWT + bcrypt</td><td>Stateless, secure password hashing</td></tr>
+    <tr><td>Frontend</td><td>React (Vite)</td><td>Component model, fast HMR</td></tr>
+    <tr><td>Charts</td><td>Chart.js</td><td>Pie, bar, line — all built-in</td></tr>
+    <tr><td>Styling</td><td>Tailwind CSS</td><td>Utility-first, responsive</td></tr>
+  </table>
+</section>
+
+<!-- SLIDE 4: Architecture Diagram -->
+<section>
+  <h2>Architecture</h2>
+  <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+    <div class="diagram-box">🌐 React SPA<br><span class="small">Port 5173</span></div>
+    <span class="arrow">→</span>
+    <div class="diagram-box">⚡ Express API<br><span class="small">Port 3001</span></div>
+    <span class="arrow">→</span>
+    <div class="diagram-box">🔐 JWT Middleware</div>
+    <span class="arrow">→</span>
+    <div class="diagram-box">📦 Service Layer</div>
+    <span class="arrow">→</span>
+    <div class="diagram-box">🗄️ SQLite DB</div>
+  </div>
+  <br>
+  <p class="small">MVC Pattern: Routes → Services → Models</p>
+</section>
+
+<!-- SLIDE 5: Database Design -->
+<section>
+  <h2>Database Design</h2>
+  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+    <div class="diagram-box" style="text-align: left;">
+      <strong>Users</strong><br>
+      <span class="small">id (PK)<br>email (unique)<br>password_hash<br>timestamps</span>
+    </div>
+    <div class="diagram-box" style="text-align: left;">
+      <strong>Categories</strong><br>
+      <span class="small">id (PK)<br>name<br>user_id (FK, nullable)<br>is_default<br>unique(name, user_id)</span>
+    </div>
+    <div class="diagram-box" style="text-align: left;">
+      <strong>Budget Entries</strong><br>
+      <span class="small">id (PK)<br>user_id (FK)<br>category_id (FK)<br>amount (DECIMAL)<br>type (income/expense)<br>entry_date<br>description</span>
+    </div>
+  </div>
+  <br>
+  <p class="small">User → has many → Entries & Categories | Category → has many → Entries</p>
+</section>
+
+<!-- SLIDE 6: API Design -->
+<section>
+  <h2>RESTful API Endpoints</h2>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr>
+    <tr><td>POST</td><td>/api/auth/register</td><td>Create account</td></tr>
+    <tr><td>POST</td><td>/api/auth/login</td><td>Get JWT token</td></tr>
+    <tr><td>GET/POST/DELETE</td><td>/api/categories</td><td>Manage categories</td></tr>
+    <tr><td>GET/POST/PUT/DELETE</td><td>/api/entries</td><td>CRUD budget entries</td></tr>
+    <tr><td>GET</td><td>/api/dashboard/*</td><td>Summary + chart data</td></tr>
+  </table>
+  <br>
+  <p class="small">All endpoints (except auth) require <code>Authorization: Bearer &lt;token&gt;</code></p>
+</section>
+
+<!-- SLIDE 7: Authentication Flow -->
+<section>
+  <h2>Authentication Flow</h2>
+  <pre><code>// Registration
+POST /api/auth/register { email, password }
+→ Hash password (bcrypt, 12 rounds)
+→ Store user in DB
+→ Return signed JWT (24h expiry)
+
+// Every subsequent request
+Authorization: Bearer eyJhbGciOi...
+→ Middleware verifies token
+→ Attaches req.userId
+→ User can only access their own data</code></pre>
+  <p class="small">Passwords are <span class="green">never stored in plaintext</span></p>
+</section>
+
+<!-- SLIDE 8: Security Features -->
+<section>
+  <h2>Security & Data Integrity</h2>
+  <ul>
+    <li>🔐 <strong>bcrypt</strong> password hashing (12 salt rounds)</li>
+    <li>🎫 <strong>JWT</strong> stateless authentication (24h expiry)</li>
+    <li>🚫 <strong>User isolation</strong> — can't access other users' data (403)</li>
+    <li>✅ <strong>Input validation</strong> — express-validator on all routes</li>
+    <li>🛡️ <strong>SQL injection safe</strong> — Sequelize parameterized queries</li>
+    <li>📋 <strong>Consistent error format</strong> — JSON error envelope on all failures</li>
+  </ul>
+</section>
+
+<!-- SLIDE 9: Frontend Features -->
+<section>
+  <h2>Frontend Features</h2>
+  <ul>
+    <li>📊 <strong>Dashboard</strong> — Summary cards + 3 chart types</li>
+    <li>📝 <strong>Entries</strong> — Full CRUD with filters (date, category, type)</li>
+    <li>🏷️ <strong>Categories</strong> — Default + custom, deletion guards</li>
+    <li>📱 <strong>Responsive</strong> — Works 320px to 2560px (hamburger menu)</li>
+    <li>🔄 <strong>Real-time updates</strong> — Charts refresh without page reload</li>
+    <li>⚠️ <strong>Error handling</strong> — Inline validation, toast-style errors</li>
+  </ul>
+</section>
+
+<!-- SLIDE 10: Code Walkthrough -->
+<section>
+  <h2>Code Walkthrough: Service Layer</h2>
+  <pre><code>// server/src/services/budgetService.js
+async function createEntry(userId, data) {
+  const { amount, type, category_id, entry_date } = data;
+
+  if (Number(amount) <= 0) {
+    throw new AppError(400, 'INVALID_AMOUNT',
+      'Amount must be greater than zero.');
+  }
+
+  return BudgetEntry.create({
+    user_id: userId,
+    amount, type, category_id, entry_date,
+    description: data.description || null,
+  });
+}</code></pre>
+  <p class="small">Clean separation: Routes validate input → Services enforce business rules → Models persist</p>
+</section>
+
+<!-- SLIDE 11: MVC Pattern -->
+<section>
+  <h2>MVC Pattern in Action</h2>
+  <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+    <div class="diagram-box" style="border-color: #4ade80;">
+      <strong class="green">Model</strong><br>
+      <span class="small">Sequelize models<br>DB schema<br>Associations</span>
+    </div>
+    <div class="diagram-box" style="border-color: #60a5fa;">
+      <strong class="highlight">View</strong><br>
+      <span class="small">React components<br>Chart.js visuals<br>Tailwind UI</span>
+    </div>
+    <div class="diagram-box" style="border-color: #f87171;">
+      <strong class="red">Controller</strong><br>
+      <span class="small">Express routes<br>Service layer<br>Validation</span>
+    </div>
+  </div>
+  <br>
+  <p class="small">Each layer has a single responsibility — easy to test and maintain</p>
+</section>
+
+<!-- SLIDE 12: Live Demo -->
+<section>
+  <h2>🎬 Live Demo</h2>
+  <ol>
+    <li>Register a new account</li>
+    <li>Add income and expense entries</li>
+    <li>View dashboard with charts</li>
+    <li>Filter entries by date/category/type</li>
+    <li>Show responsive design (resize browser)</li>
+    <li>Show 401 on expired/missing token</li>
+  </ol>
+  <br>
+  <p class="highlight">http://localhost:5173</p>
+</section>
+
+<!-- SLIDE 13: Project Stats -->
+<section>
+  <h2>Project Stats</h2>
+  <table>
+    <tr><td>Backend files</td><td>~15 source files</td></tr>
+    <tr><td>Frontend files</td><td>~20 components/pages</td></tr>
+    <tr><td>API endpoints</td><td>14 routes</td></tr>
+    <tr><td>Database tables</td><td>3 (Users, Categories, Entries)</td></tr>
+    <tr><td>Integration tests</td><td>Auth, isolation, sanitization</td></tr>
+    <tr><td>Chart types</td><td>Pie, Bar, Line</td></tr>
+  </table>
+</section>
+
+<!-- SLIDE 14: What I Learned -->
+<section>
+  <h2>Key Takeaways</h2>
+  <ul>
+    <li>Full-stack architecture from DB to UI</li>
+    <li>JWT authentication and authorization patterns</li>
+    <li>RESTful API design with proper error handling</li>
+    <li>Sequelize ORM for database abstraction</li>
+    <li>React component composition and state management</li>
+    <li>Data visualization with Chart.js</li>
+    <li>Responsive design with Tailwind CSS</li>
+  </ul>
+</section>
+
+<!-- SLIDE 15: Questions -->
+<section>
+  <h1>Questions?</h1>
+  <br>
+  <p>
+    <span class="tech-badge">GitHub: ToebyyBryant/budget-tracker</span>
+  </p>
+  <br>
+  <p class="small">Stack: Node.js • Express • SQLite • Sequelize • React • Vite • Chart.js • Tailwind • JWT</p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    transition: 'slide',
+    center: true,
+  });
+</script>
+</body>
+</html>

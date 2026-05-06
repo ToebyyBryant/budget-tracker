@@ -14,8 +14,8 @@ async function start() {
   await sequelize.authenticate();
   logger.info({ message: 'Database connection established.' });
 
-  // Sync models to the database (non-destructive; use migrations for schema changes)
-  await sequelize.sync({ alter: false });
+  // Sync models to the database (creates tables if they don't exist)
+  await sequelize.sync();
   logger.info({ message: 'Database models synchronised.' });
 
   // Seed default categories if they are not already present

@@ -1,7 +1,7 @@
 'use strict';
 
 const { BudgetEntry, Category, sequelize } = require('../models/index');
-const { Op, fn, col, literal } = require('sequelize');
+const { Op } = require('sequelize');
 
 /**
  * Builds a Sequelize date where clause for entry_date filtering.
@@ -84,6 +84,7 @@ async function getDashboardSummary(userId, startDate, endDate) {
 
 /**
  * Returns expense totals grouped by category for a pie chart.
+ * Uses in-memory aggregation for SQLite compatibility.
  *
  * @param {number} userId
  * @param {string|undefined} startDate
@@ -97,76 +98,81 @@ async function getExpensesByCategory(userId, startDate, endDate) {
     where.entry_date = dateWhere;
   }
 
-  const rows = await BudgetEntry.findAll({
+  const entries = await BudgetEntry.findAll({
     where,
-    attributes: [
-      'category_id',
-      [fn('SUM', col('BudgetEntry.amount')), 'total'],
-    ],
-    include: [{ model: Category, as: 'Category', attributes: ['name'] }],
-    group: ['BudgetEntry.category_id', 'Category.id'],
-    order: [[literal('"total"'), 'DESC']],
+    include: [{ model: Category, as: 'Category', attributes: ['id', 'name'] }],
     raw: false,
   });
 
-  return rows.map((row) => ({
-    categoryId: row.category_id,
-    name: row.Category ? row.Category.name : 'Unknown',
-    total: parseFloat(parseFloat(row.getDataValue('total')).toFixed(2)),
-  }));
+  // Aggregate in memory
+  const categoryTotals = {};
+  for (const entry of entries) {
+    const catId = entry.category_id;
+    const catName = entry.Category ? entry.Category.name : 'Unknown';
+    if (!categoryTotals[catId]) {
+      categoryTotals[catId] = { categoryId: catId, name: catName, total: 0 };
+    }
+    categoryTotals[catId].total += parseFloat(entry.amount);
+  }
+
+  return Object.values(categoryTotals)
+    .sort((a, b) => b.total - a.total)
+    .map((c) => ({ categoryId: c.categoryId, name: c.name, total: parseFloat(c.total.toFixed(2)) }));
 }
 
 /**
  * Returns monthly income vs expense totals for the last 6 calendar months.
+ * Uses in-memory grouping for SQLite compatibility (no TO_CHAR).
  *
  * @param {number} userId
  * @returns {Promise<Array<{ month: string, income: number, expenses: number }>>}
  */
 async function getMonthlyComparison(userId) {
-  // Compute the start of 6 months ago (first day of that month)
   const now = new Date();
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
   const startDate = sixMonthsAgo.toISOString().slice(0, 10);
 
-  const rows = await BudgetEntry.findAll({
+  const entries = await BudgetEntry.findAll({
     where: {
       user_id: userId,
       entry_date: { [Op.gte]: startDate },
     },
-    attributes: [
-      [fn('TO_CHAR', col('entry_date'), 'YYYY-MM'), 'month'],
-      'type',
-      [fn('SUM', col('amount')), 'total'],
-    ],
-    group: [literal("TO_CHAR(entry_date, 'YYYY-MM')"), 'type'],
-    order: [[literal("TO_CHAR(entry_date, 'YYYY-MM')"), 'ASC']],
+    attributes: ['entry_date', 'type', 'amount'],
     raw: true,
   });
 
   // Build a map of month -> { income, expenses }
   const monthMap = {};
 
-  // Pre-populate all 6 months with zeros so months with no data still appear
+  // Pre-populate all 6 months with zeros
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     monthMap[key] = { month: key, income: 0, expenses: 0 };
   }
 
-  for (const row of rows) {
-    const month = row.month;
-    if (!monthMap[month]) {
-      monthMap[month] = { month, income: 0, expenses: 0 };
+  // Group entries by month in memory
+  for (const entry of entries) {
+    const monthKey = entry.entry_date.substring(0, 7); // YYYY-MM
+    if (!monthMap[monthKey]) {
+      monthMap[monthKey] = { month: monthKey, income: 0, expenses: 0 };
     }
-    const total = parseFloat(row.total);
-    if (row.type === 'income') {
-      monthMap[month].income = parseFloat((monthMap[month].income + total).toFixed(2));
+    const amount = parseFloat(entry.amount);
+    if (entry.type === 'income') {
+      monthMap[monthKey].income += amount;
     } else {
-      monthMap[month].expenses = parseFloat((monthMap[month].expenses + total).toFixed(2));
+      monthMap[monthKey].expenses += amount;
     }
   }
 
-  return Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
+  // Round values
+  return Object.values(monthMap)
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map((m) => ({
+      month: m.month,
+      income: parseFloat(m.income.toFixed(2)),
+      expenses: parseFloat(m.expenses.toFixed(2)),
+    }));
 }
 
 /**
