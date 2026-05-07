@@ -55,3 +55,6 @@ server/data/
 BudgetTracker/
 BudgetTracker_Requirements.docx
 Week1 Update.txt
+
+# Local launcher script
+start.bat
