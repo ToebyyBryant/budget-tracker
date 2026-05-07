@@ -6,6 +6,11 @@ import PieChart from '../components/PieChart'
 import BarChart from '../components/BarChart'
 import LineChart from '../components/LineChart'
 
+const PIE_COLORS = [
+  '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+  '#FF9F40', '#C9CBCF', '#7BC8A4', '#E7E9ED', '#76D7C4',
+]
+
 function getDefaultPeriod() {
   const now = new Date()
   const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -15,6 +20,57 @@ function getDefaultPeriod() {
     .toISOString()
     .split('T')[0]
   return { startDate, endDate }
+}
+
+/**
+ * Transform raw API pie data into Chart.js format
+ * API returns: [{ categoryId, name, total }]
+ * Chart.js needs: { labels, datasets: [{ data, backgroundColor }] }
+ */
+function transformPieData(raw) {
+  if (!raw || !Array.isArray(raw) || raw.length === 0) return null
+  return {
+    labels: raw.map(r => r.name),
+    datasets: [{
+      data: raw.map(r => r.total),
+      backgroundColor: raw.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]),
+    }]
+  }
+}
+
+/**
+ * Transform raw API bar data into Chart.js format
+ * API returns: [{ month, income, expenses }]
+ * Chart.js needs: { labels, datasets: [{ label, data }] }
+ */
+function transformBarData(raw) {
+  if (!raw || !Array.isArray(raw) || raw.length === 0) return null
+  return {
+    labels: raw.map(r => r.month),
+    datasets: [
+      { label: 'Income', data: raw.map(r => r.income), backgroundColor: '#4ade80' },
+      { label: 'Expenses', data: raw.map(r => r.expenses), backgroundColor: '#f87171' },
+    ]
+  }
+}
+
+/**
+ * Transform raw API line data into Chart.js format
+ * API returns: [{ date, balance }]
+ * Chart.js needs: { labels, datasets: [{ label, data }] }
+ */
+function transformLineData(raw) {
+  if (!raw || !Array.isArray(raw) || raw.length === 0) return null
+  return {
+    labels: raw.map(r => r.date),
+    datasets: [{
+      label: 'Balance',
+      data: raw.map(r => r.balance),
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      fill: true,
+    }]
+  }
 }
 
 export default function DashboardPage() {
@@ -39,9 +95,9 @@ export default function DashboardPage() {
       .then(([summaryRes, pieRes, barRes, lineRes]) => {
         if (cancelled) return
         setSummary(summaryRes)
-        setPieData(pieRes)
-        setBarData(barRes)
-        setLineData(lineRes)
+        setPieData(transformPieData(pieRes))
+        setBarData(transformBarData(barRes))
+        setLineData(transformLineData(lineRes))
 
         // Determine empty state: no income and no expenses
         const noData =
